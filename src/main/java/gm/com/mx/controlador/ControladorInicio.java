@@ -2,16 +2,15 @@ package gm.com.mx.controlador;
 
 import gm.com.mx.modelo.Empleados;
 import gm.com.mx.modelo.Modelo;
-import gm.com.mx.vista.VentanaModalRegistrar;
-import gm.com.mx.vista.VentanaFunciones;
-import gm.com.mx.vista.VentanaInfo;
-import gm.com.mx.vista.VentanaInicio;
+import gm.com.mx.vista.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javax.swing.JOptionPane;
 
 public class ControladorInicio extends KeyAdapter implements ActionListener {
@@ -95,25 +94,34 @@ public class ControladorInicio extends KeyAdapter implements ActionListener {
             JOptionPane.showMessageDialog(ventanaInicio, "DIGITE NUMERO DE EMPLEADO");
         } else {
             Empleados empleado = new Empleados(Integer.parseInt(numeroIngresado));
-            if (Modelo.isExisteEmpleado(empleado)) {
+            if (Modelo.isExiste(empleado)) {
                 Modelo.getDatosEmpleado(empleado);
                 if (Modelo.isRegistroEntrada(empleado)) {
                     if (!Modelo.isActivoSistema(empleado)) {
+                            VentanaFunciones ventanaFunciones = new VentanaFunciones();
+                            ventanaFunciones.lblNombreEmpleado.setText(String.format("%d - %s %s", empleado.getNumEmpleado(),
+                                    empleado.getNombre(), empleado.getaPaterno()));
+                            Modelo.setActivoSistema(empleado);
 
-                        VentanaFunciones ventanaFunciones = new VentanaFunciones();
-                        ventanaFunciones.lblNombreEmpleado.setText(String.format("%d - %s %s", empleado.getNumEmpleado(),
-                                                                        empleado.getNombre(), empleado.getaPaterno()));
-                        Modelo.setActivoSistema(empleado);
-
-                        ventanaInicio.setVisible(false);
-                        ventanaFunciones.setVisible(true);
+                            ventanaInicio.setVisible(false);
+                            ventanaFunciones.setVisible(true);
                     } else {
                         JOptionPane.showMessageDialog(ventanaInicio, "EL USUARIO SE ENCUENTRA EN EL SISTEMA");
                         textoPredeterminadoSignIn();
                     }
                 } else {
-                    JOptionPane.showMessageDialog(ventanaInicio, "EMPLEADO NO HA REGISTRADO ENTRADA");
-                    textoPredeterminadoSignIn();
+                    if (Modelo.isAdmin(empleado)) {
+                        VentanaAdmin ventana = new VentanaAdmin();
+                        List<String> listaTablas = Modelo.getTablas();
+                        for (int i = 0; i < listaTablas.size(); i++){
+                            ventana.cmbTablas.addItem(listaTablas.get(i));
+                        }
+                        ventanaInicio.setVisible(false);
+                        ventana.setVisible(true);
+                    }else {
+                        JOptionPane.showMessageDialog(ventanaInicio, "EMPLEADO NO HA REGISTRADO ENTRADA");
+                        textoPredeterminadoSignIn();
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(ventanaInicio, "# DE EMPLEADO NO EXISTE.");

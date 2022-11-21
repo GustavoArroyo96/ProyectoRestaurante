@@ -61,7 +61,7 @@ public class ControladorClockInOut extends KeyAdapter implements ActionListener 
             HorasTrabajadas empleado = new HorasTrabajadas(Integer.parseInt(numeroIngresado));
             Empleados empleados = new Empleados(Integer.parseInt(numeroIngresado));
 
-            if (Modelo.isExisteEmpleado(empleados)) {
+            if (Modelo.isExiste(empleados)) {
                 if (Modelo.isRegistroEntrada(empleados)) {
                     int eleccion = JOptionPane.showConfirmDialog(ventanaClock, "¿Desea registrar hora de salida?", "Salida", JOptionPane.YES_NO_OPTION);
                     switch (eleccion) {

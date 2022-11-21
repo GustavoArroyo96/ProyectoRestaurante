@@ -2,7 +2,7 @@
 package gm.com.mx.modelo;
 
 public class Mesas {
-    
+
     private int numMesa;
     private boolean mesaDisponible;
 
@@ -14,7 +14,7 @@ public class Mesas {
         this.numMesa = numMesa;
         this.mesaDisponible = mesaDisponible;
     }
-    
+
     public int getNumMesa() {
         return numMesa;
     }

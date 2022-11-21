@@ -1,10 +1,7 @@
 package gm.com.mx.modelo;
 
 import javax.swing.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +36,16 @@ public class Modelo {
     private static final String instruccionSQLDeleteOrden = "DELETE FROM ORDENES_AL_MOMENTO WHERE NUM_MESA = ? ";
     private static final String instruccionSQLUpdateMesaDisponible = "UPDATE MESAS SET MESA_DISPONIBLE = TRUE WHERE NUM_MESA = ?";
     private static final String instruccionSQLUpdateMesaEstado = "UPDATE TICKET SET ESTADO_TICKET = FALSE WHERE NUM_MESA = ?";
+    private static final String instruccionSQLConsutaAdmin = "SELECT PUESTO FROM EMPLEADOS WHERE NUM_EMPLEADO = ?";
+    private static final String instruccionSQLConsultaTablas = "SHOW FULL TABLES FROM PROYECTO_RESTAURANTE";
+    private static final String instruccionSQLConsultaCampo = "SHOW COLUMNS FROM ";
+    private static final String instruccionSQLAgregarEmpleado = "INSERT INTO EMPLEADOS (NUM_EMPLEADO, NOMBRE, A_PATERNO, A_MATERNO, PUESTO, SUCURSAL) VALUES (?,?,?,?,?,?)";
+    private static final String instruccionSQLAgregarHoras = "INSERT INTO HORASTRABAJADAS (FECHA_ENTRADA, H_ENTRADA, FECHA_SALIDA, H_SALIDA, ACTIVO_SISTEMA, NUM_EMPLEADO) VALUES (?,?,?,?,?,?)";
+    private static final String instruccionSQLAgregarMesa = "INSERT INTO MESAS (NUM_MESA, MESA_DISPONIBLE) VALUES (?,?)";
+    private static final String instruccionSQLAgregarOrden = "INSERT INTO ORDENES_AL_MOMENTO (NUM_MESA, COD_PRODUCTO) VALUES (?,?)";
+    private static final String instruccionSQLAgregarProducto = "INSERT INTO PRODUCTOS (SECCION_PRODUCTO, NOM_PRODUCTO, PRE_PRODUCTO) VALUES (?,?,?)";
 
+    private static final String instruccionSQLAgregarTicket = "INSERT INTO TICKET (ESTAOO_TICKET, FECHA, HORA_REGISTRO, TOTAL, NUM_EMPLEADO, NUM_MESA) VALUES (?,?,?,?,?,?)";
 
     public Modelo() {
         establecerConexion = new Conexion();
@@ -76,7 +82,7 @@ public class Modelo {
         return empleado;
     }
 
-    public static boolean isExisteEmpleado(Empleados empleado) {
+    public static boolean isExiste(Empleados empleado) {
 
         Connection conexionBD = establecerConexion.getConexion();
         stmt = null;
@@ -560,4 +566,540 @@ public class Modelo {
             throw new RuntimeException(e);
         }
     }
+
+    public static boolean isAdmin(Empleados empleado){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        boolean administrador = false;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLConsutaAdmin);
+            stmt.setInt(1, empleado.getNumEmpleado());
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                if (rs.getString("PUESTO").equals(empleado.getPuesto())) {
+                    administrador = true;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return administrador;
+    }
+
+    public static List<String> getTablas(){
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        List<String> listaTablas = new ArrayList<>();
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLConsultaTablas);
+            rs = stmt.executeQuery();
+
+            while(rs.next()){
+                listaTablas.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return listaTablas;
+    }
+
+    public static List<String> getCampos(String nombreTabla){
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        List<String> listaColumnas = new ArrayList<>();
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLConsultaCampo+""+nombreTabla);
+            rs = stmt.executeQuery();
+
+            while(rs.next()){
+                listaColumnas.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return listaColumnas;
+    }
+
+    public static void mostrarTabla(String nombreTabla, String[] columnasTabla, JTable tabla){
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+
+        try {
+            MiModelo modelo = new MiModelo();
+            tabla.setModel(modelo);
+            stmt = conexionBD.prepareStatement("SELECT * FROM "+nombreTabla);
+            rs = stmt.executeQuery();
+
+            ResultSetMetaData rsMD = rs.getMetaData();
+            int cantidadColumnas = rsMD.getColumnCount();
+
+            for (int i = 0; i < columnasTabla.length; i++){
+                modelo.addColumn(columnasTabla[i]);
+            }
+
+            while(rs.next()){
+                Object[] filas = new Object[cantidadColumnas];
+
+                for (int i = 0; i < cantidadColumnas; i++){
+                    filas[i] = rs.getObject(i+1);
+                }
+                modelo.addRow(filas);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void buscarCampoBy(String buscar, String nombreTabla, String nombreColumna, String[] columnasTabla, JTable tabla){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        try {
+            MiModelo modelo = new MiModelo();
+            tabla.setModel(modelo);
+            stmt = conexionBD.prepareStatement("SELECT * FROM "+nombreTabla+" WHERE "+nombreColumna+" LIKE '%"+buscar+"%'");
+            System.out.println("SELECT * FROM "+nombreTabla+" WHERE "+nombreColumna+" LIKE '%"+buscar+"%'");
+            rs = stmt.executeQuery();
+
+            ResultSetMetaData rsMD = rs.getMetaData();
+            int cantidadColumnas = rsMD.getColumnCount();
+
+            for (int i = 0; i < columnasTabla.length; i++){
+                modelo.addColumn(columnasTabla[i]);
+            }
+
+            while(rs.next()){
+                Object[] filas = new Object[cantidadColumnas];
+
+                for (int i = 0; i < cantidadColumnas; i++){
+                    filas[i] = rs.getObject(i+1);
+                }
+                modelo.addRow(filas);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void nuevoRegistro(Empleados empleado){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarEmpleado);
+            stmt.setInt(1, empleado.getNumEmpleado());
+            stmt.setString(2, empleado.getNombre());
+            stmt.setString(3, empleado.getaPaterno());
+            stmt.setString(4, empleado.getaMaterno());
+            stmt.setString(5, empleado.getPuesto());
+            stmt.setInt(6, empleado.getSucursal());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void nuevoRegistro(Productos producto){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarProducto);
+            stmt.setString(1, producto.getSeccionProducto());
+            stmt.setString(2, producto.getNomProducto());
+            stmt.setInt(3, producto.getPreProducto());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void nuevoRegistro(Mesas mesas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarMesa);
+            stmt.setInt(1, mesas.getNumMesa());
+            stmt.setBoolean(2, mesas.isMesaDisponible());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void nuevoRegistro(int mesa, int producto){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarOrden);
+            stmt.setInt(1, mesa);
+            stmt.setInt(2, producto);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void nuevoRegistro(HorasTrabajadas horasTrabajadas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarHoras);
+            stmt.setString(1, horasTrabajadas.getFechaEntrada());
+            stmt.setString(2, horasTrabajadas.gethEntrada());
+            stmt.setString(3, horasTrabajadas.getFechaSalida());
+            stmt.setString(4, horasTrabajadas.gethSalida());
+            stmt.setBoolean(5, horasTrabajadas.isActivoSistema());
+            stmt.setInt(6, horasTrabajadas.getNumEmpleado());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void nuevoRegistro(Ticket ticket){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement(instruccionSQLAgregarTicket);
+            stmt.setBoolean(1, ticket.isEstadoTicket());
+            stmt.setString(2, ticket.getFecha());
+            stmt.setString(3, ticket.getHoraRegistro());
+            stmt.setInt(4, ticket.getTotal());
+            stmt.setInt(5, ticket.getNumEmpleado());
+            stmt.setInt(6, ticket.getNumMesa());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static ArrayList<String> getListaDeEmpleados() {
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        ArrayList<String> listaEmpleados = new ArrayList<>();
+
+        try {
+            stmt = conexionBD.prepareStatement("SELECT NUM_EMPLEADO FROM EMPLEADOS GROUP BY NUM_EMPLEADO");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                listaEmpleados.add(rs.getString("NUM_EMPLEADO"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return listaEmpleados;
+    }
+
+    public static boolean isExiste(Mesas mesas) {
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        boolean existe = false;
+
+        try {
+            stmt = conexionBD.prepareStatement("SELECT NUM_MESA FROM MESAS");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                if (rs.getInt("NUM_MESA") == mesas.getNumMesa()) {
+                    existe = true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return existe;
+    }
+
+    public static ArrayList<String> getListaMesas() {
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        ArrayList<String> listaMesas = new ArrayList<>();
+
+        try {
+            stmt = conexionBD.prepareStatement("SELECT NUM_MESA FROM MESAS GROUP BY NUM_MESA");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                listaMesas.add(rs.getString("NUM_MESA"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return listaMesas;
+    }
+
+    public static ArrayList<String> getListaProductos() {
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        ArrayList<String> listaProductos = new ArrayList<>();
+
+        try {
+            stmt = conexionBD.prepareStatement("SELECT COD_PRODUCTO FROM PRODUCTOS GROUP BY COD_PRODUCTO");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                listaProductos.add(rs.getString("COD_PRODUCTO"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return listaProductos;
+    }
+
+    public static void updateRegistro (Empleados empleados){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE EMPLEADOS SET NOMBRE = ?, A_PATERNO = ?, A_MATERNO = ?, PUESTO = ?, SUCURSAL = ? WHERE NUM_EMPLEADO = ? ");
+            stmt.setString(1, empleados.getNombre());
+            stmt.setString(2, empleados.getaPaterno());
+            stmt.setString(3, empleados.getaMaterno());
+            stmt.setString(4, empleados.getPuesto());
+            stmt.setInt(5, empleados.getSucursal());
+            stmt.setInt(6, empleados.getNumEmpleado());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateRegistro (HorasTrabajadas horasTrabajadas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE HORASTRABAJADAS SET FECHA_ENTRADA = ?, H_ENTRADA = ?, FECHA_SALIDA = ?, H_SALIDA = ?, ACTIVO_SISTEMA = ?, NUM_EMPLEADO = ? WHERE ID = ?");
+            stmt.setString(1, horasTrabajadas.getFechaEntrada());
+            stmt.setString(2, horasTrabajadas.gethEntrada());
+            stmt.setString(3, horasTrabajadas.getFechaSalida());
+            stmt.setString(4, horasTrabajadas.gethSalida());
+            stmt.setBoolean(5, horasTrabajadas.isActivoSistema());
+            stmt.setInt(6, horasTrabajadas.getNumEmpleado());
+            stmt.setInt(7, horasTrabajadas.getiD());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateRegistro (Mesas mesas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE MESAS SET MESA_DISPONIBLE = ? WHERE NUM_MESA = ? ");
+            stmt.setBoolean(1, mesas.isMesaDisponible());
+            stmt.setInt(2, mesas.getNumMesa());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateRegistro (int numMesa, int codProducto, int id){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE ORDENES_AL_MOMENTO SET NUM_MESA = ?, COD_PRODUCTO = ? WHERE ID = ? ");
+            stmt.setInt(1, numMesa);
+            stmt.setInt(2, codProducto);
+            stmt.setInt(3, id);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateRegistro (Productos producto){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE PRODUCTOS SET SECCION_PRODUCTO = ?, NOM_PRODUCTO = ?, PRE_PRODUCTO = ? WHERE COD_PRODUCTO = ? ");
+            stmt.setString(1, producto.getSeccionProducto());
+            stmt.setString(2, producto.getNomProducto());
+            stmt.setInt(3, producto.getPreProducto());
+            stmt.setInt(4, producto.getCodProducto());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateRegistro (Ticket ticket){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("UPDATE TICKET SET ESTADO_TICKET = ?, FECHA = ?, HORA_REGISTRO = ?, TOTAL = ?, NUM_EMPLEADO = ?, NUM_MESA = ? WHERE NUM_TICKET = ? ");
+            stmt.setBoolean(1, ticket.isEstadoTicket());
+            stmt.setString(2, ticket.getFecha());
+            stmt.setString(3, ticket.getHoraRegistro());
+            stmt.setInt(4, ticket.getTotal());
+            stmt.setInt(5, ticket.getNumEmpleado());
+            stmt.setInt(6, ticket.getNumMesa());
+            stmt.setInt(7, ticket.getNumTicket());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (Empleados empleado){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM EMPLEADOS WHERE NUM_EMPLEADO = ?");
+            stmt.setInt(1, empleado.getNumEmpleado());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (HorasTrabajadas horasTrabajadas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM HORASTRABAJADAS WHERE ID = ?");
+            stmt.setInt(1, horasTrabajadas.getiD());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (Mesas mesas){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM MESAS WHERE NUM_MESA = ?");
+            stmt.setInt(1, mesas.getNumMesa());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (int id){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM ORDENES_AL_MOMENTO WHERE ID = ?");
+            stmt.setInt(1, id);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (Productos productos){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM PRODUCTOS WHERE COD_PRODUCTO = ?");
+            stmt.setInt(1, productos.getCodProducto());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteRegistro (Ticket ticket){
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+
+        try {
+            stmt = conexionBD.prepareStatement("DELETE FROM TICKET WHERE NUM_TICKET = ?");
+            stmt.setInt(1, ticket.getNumTicket());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int ultimoId(String nombreCampo, String nombreTabla){
+
+        Connection conexionBD = establecerConexion.getConexion();
+        stmt = null;
+        rs = null;
+        int ultimo = 0;
+
+        try{
+            stmt = conexionBD.prepareStatement("SELECT "+nombreCampo+" FROM "+nombreTabla);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int actual = rs.getInt(1);
+
+                if(actual > ultimo){
+                    ultimo = actual;
+                }
+
+            }
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+
+        return ultimo+1;
+    }
 }
+

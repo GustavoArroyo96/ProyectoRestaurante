@@ -14,7 +14,21 @@ public class Ticket {
     public Ticket() {
     }
 
+    public Ticket(int numTicket) {
+        this.numTicket = numTicket;
+    }
+
     public Ticket(boolean estadoTicket, String fecha, String horaRegistro, int total, int numEmpleado, int numMesa) {
+        this.estadoTicket = estadoTicket;
+        this.fecha = fecha;
+        this.horaRegistro = horaRegistro;
+        this.total = total;
+        this.numEmpleado = numEmpleado;
+        this.numMesa = numMesa;
+    }
+
+    public Ticket(int numTicket, boolean estadoTicket, String fecha, String horaRegistro, int total, int numEmpleado, int numMesa) {
+        this.numTicket = numTicket;
         this.estadoTicket = estadoTicket;
         this.fecha = fecha;
         this.horaRegistro = horaRegistro;
@@ -47,7 +61,7 @@ public class Ticket {
         this.horaRegistro = horaRegistro;
     }
 
-    public double getTotal() {
+    public int getTotal() {
         return total;
     }
 

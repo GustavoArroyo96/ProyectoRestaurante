@@ -29,6 +29,25 @@ public class HorasTrabajadas {
         this.numEmpleado = numEmpleado;
     }
 
+    public HorasTrabajadas(int iD, String fechaEntrada, String hEntrada, String fechaSalida, String hSalida, boolean activoSistema, int numEmpleado) {
+        this.iD = iD;
+        this.fechaEntrada = fechaEntrada;
+        this.hEntrada = hEntrada;
+        this.fechaSalida = fechaSalida;
+        this.hSalida = hSalida;
+        this.activoSistema = activoSistema;
+        this.numEmpleado = numEmpleado;
+    }
+
+    public HorasTrabajadas(String fechaEntrada, String hEntrada, String fechaSalida, String hSalida, boolean activoSistema, int numEmpleado) {
+        this.fechaEntrada = fechaEntrada;
+        this.hEntrada = hEntrada;
+        this.fechaSalida = fechaSalida;
+        this.hSalida = hSalida;
+        this.activoSistema = activoSistema;
+        this.numEmpleado = numEmpleado;
+    }
+
     public int getiD() {
         return iD;
     }

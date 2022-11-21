@@ -12,7 +12,16 @@ public class Empleados {
     public Empleados(int numEmpleado) {
         this.numEmpleado = numEmpleado;
     }
-    
+
+    public Empleados(int numEmpleado, String nombre, String aPaterno, String aMaterno, String puesto, int sucursal) {
+        this.numEmpleado = numEmpleado;
+        this.nombre = nombre;
+        this.aPaterno = aPaterno;
+        this.aMaterno = aMaterno;
+        this.puesto = puesto;
+        this.sucursal = sucursal;
+    }
+
     public int getNumEmpleado() {
         return numEmpleado;
     }
